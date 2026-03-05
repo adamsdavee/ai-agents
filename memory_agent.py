@@ -50,3 +50,15 @@ while user_input != "exit":
     conversation_history = result['messages'] # not really useful as it updates based on the object pointing to state['messages'] either ways
     user_input = input("Enter: ")
 
+
+with open("logging.txt", "w") as file:
+    file.write("Your Conversation Log: \n\n")
+    for message in conversation_history:
+        if isinstance(message, HumanMessage):
+            file.write(f"You: {message.content}\n")
+        elif isinstance(message, AIMessage):
+            file.write(f"AI: {message.content}\n\n")
+
+    file.write("End of conversation")
+
+print("Conversation saved to logging.txt")
