@@ -1,0 +1,52 @@
+from typing import TypedDict, List, Union
+from langchain_core.messages import HumanMessage, AIMessage
+# from langchain_openai import ChatOpenAI
+from langchain_google_genai import ChatGoogleGenerativeAI
+from langgraph.graph import StateGraph, START, END
+from dotenv import load_dotenv
+import os
+
+
+load_dotenv()
+
+class AgentState(TypedDict):
+    messages: List[Union[HumanMessage, AIMessage]]
+
+llm = ChatGoogleGenerativeAI(
+    model="gemini-3-flash-preview",
+    google_api_key=os.getenv("GEMINI_API_KEY")
+)
+
+
+def process(state: AgentState) -> AgentState:
+    """"This node will solve the request you input"""
+
+    response = llm.invoke(state['messages'])
+
+    state["messages"].append(AIMessage(content=response.text))
+    print(f"\nAI: {response.text}")
+
+    return state
+
+graph = StateGraph(AgentState)
+
+graph.add_node("process_node", process)
+graph.add_edge(START, "process_node")
+graph.add_edge("process_node", END)
+
+agent = graph.compile()
+
+conversation_history = []
+
+user_input = input("Enter: ")
+
+while user_input != "exit":
+    conversation_history.append(HumanMessage(content=user_input))
+    print(conversation_history)
+
+    result = agent.invoke({"messages": conversation_history.copy()})
+
+    print(result)
+    conversation_history = result['messages'] # not really useful as it updates based on the object pointing to state['messages'] either ways
+    user_input = input("Enter: ")
+
